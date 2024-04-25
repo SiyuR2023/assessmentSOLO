@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AOTY Reviews</title>
+</head>
+<body>
+    <h1>Album of the Year Reviews</h1>
+    <ul>
+        {% for aoty in aoty_reviews %}
+            <li>{{ aoty.album.title }} by {{ aoty.album.artist }} - Score: {{ aoty.aoty_critic_score }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

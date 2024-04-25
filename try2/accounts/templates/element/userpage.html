@@ -1,0 +1,59 @@
+{% extends 'element/base.html' %}
+
+{% block content %}
+<h1>Album List</h1>
+<!-- Search Form -->
+<form method="GET" action="">
+    <input type="text" name="query" placeholder="Search albums..." value="{{ request.GET.query }}">
+    <button type="submit">Search</button>
+</form>
+<table>
+    <thead>
+        <tr>
+            <th>Number</th>
+            <th>Artist</th>
+            <th>Title</th>
+            <th>Release Date</th>
+            <th>Format</th>
+            <th>Label</th>
+            <th>Genre</th>
+            <th>Add to Cart</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for album in albums %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><a href="{% url 'album_detail' album.id %}">{{ album.artist }}</a></td>
+            <td>{{ album.title }}</td>
+            <td>{{ album.release_date }}</td>
+            <td>{{ album.format }}</td>
+            <td>{{ album.label }}</td>
+            <td>{{ album.genre }}</td>
+            <td><button data-album-id="{{ album.id }}">Add to Cart (£20)</button></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<!-- 分页器链接 -->
+<div>
+    <span class="step-links">
+        {% if albums.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ albums.previous_page_number }}">preceding page</a>
+        {% endif %}
+        
+        <span class="current">
+            Page {{ albums.number }}  (/all {{ albums.paginator.num_pages }} )
+        </span>
+        
+        {% if albums.has_next %}
+            <a href="?page={{ albums.next_page_number }}">next page</a>
+            <a href="?page={{ albums.paginator.num_pages }}">last page &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+{% endblock %}
+
+

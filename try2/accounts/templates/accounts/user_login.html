@@ -1,0 +1,12 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+    <h2>Login</h2>
+    <!-- 开始定义表单，使用POST方法提交数据 -->
+    <form method="post">
+        {% csrf_token %}  <!-- Django模板标签，用于防止CSRF攻击，生成隐藏的输入字段 -->
+        {{ form.as_p }}   <!-- 渲染表单字段，每个字段包裹在<p>标签中 -->
+        <button type="submit">Login</button>  <!-- 提交按钮 -->
+    </form>
+    <p>Don't have an account? <a href="{% url 'register' %}">Sign up</a></p>
+{% endblock %}

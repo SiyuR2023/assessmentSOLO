@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reviews</title>
+</head>
+<body>
+    <h1>Album Reviews</h1>
+    <ul>
+        {% for review in reviews %}
+            <li>{{ review.album.title }} by {{ review.album.artist }} - Score: {{ review.metacritic_critic_score }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

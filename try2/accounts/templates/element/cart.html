@@ -1,0 +1,33 @@
+{% extends 'element/base.html' %}
+
+{% block content %}
+<h2>购物车</h2>
+
+{% if albums %}
+<table>
+    <thead>
+        <tr>
+            <th>专辑名称</th>
+            <th>艺术家</th>
+            
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for album in albums %}
+        <tr>
+            <td><a href="{% url 'album_detail' album.id %}">{{ album.name }}</a></td>
+            <td>{{ album.artist }}</td>
+            
+            <td>
+                <button onclick="removeFromCart({{ album.id }});">移除</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>您的购物车为空。</p>
+{% endif %}
+
+{% endblock %}

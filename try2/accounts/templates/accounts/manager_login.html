@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Login</button>
+    </form>
+    {% if error %}
+        <p>{{ error }}</p>
+    {% endif %}
+    <hr>
+    <p>The administrator account must use the preset account, if you don't have one, please click  <a href="{% url 'homepage' %}">back</a></p>
+    <p>For testing purposes, pre-defined accounts are provided: </p>
+    <p>Username: IT</p>
+    <p>Password: aberdeen</p>
+</body>
+</html>
