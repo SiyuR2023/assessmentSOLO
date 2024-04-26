@@ -4,13 +4,16 @@
     <title>User List</title>
 </head>
 <body>
+    
     <p><a href="{% url 'homepage' %}">homepage</a></p> 
+    <p>View Album <a href="{% url 'album-list' %}">list</a></p>
     <h2>User List</h2>
+    
     <ul>
         {% for user in users %}
             <li>{{ user.username }} - {{ user.email }}</li>
         {% endfor %}
     </ul>
-    <p>go to  <a href="{% url 'album-list' %}">list</a></p>
+    
 </body>
 </html>

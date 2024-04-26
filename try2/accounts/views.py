@@ -9,7 +9,8 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.forms import ModelForm
 from django_tables2 import RequestConfig
 from django.urls import reverse  # 导入reverse用于动态解析URL
-from .forms import CustomUserCreationForm, MassageLoginForm
+from django.db.models import Q
+from .forms import CustomUserCreationForm, MassageLoginForm, PaymentForm
 from .models import Profile, Album, Review, Aoty
 from .tables import AlbumTable
 
@@ -60,9 +61,9 @@ def manager_login(request):
             user = authenticate(request, username=username, password=password)
             if user is not None and (user.is_staff or user.is_superuser):
                 login(request, user)
-                return redirect('user_list')  # 重定向到管理员页面或其他适当的页面
+                return redirect('user_list')  
             else:
-                # 如果用户不存在或不是管理员，显示适当的错误消息
+                
                 form.add_error(None, 'Invalid credentials or not authorized as an administrator')
     else:
         form = MassageLoginForm()
@@ -70,14 +71,32 @@ def manager_login(request):
 
 def user_list(request):
     users = User.objects.all() 
-    return render(request, 'admin/user_list.html')
+    context = {'users': users}
+    return render(request, 'admin/user_list.html', context)
 
 
 def userpage(request):
+    albums = None
+    if request.method == 'POST':
+        cart = request.session.get('cart', [])
+        print("Cart content:", cart)
+        # Get the album details from the album_id in the cart, which requires a query from the database.
+        albums = Album.objects.filter(id__in=cart)  
     query = request.GET.get('query', '')
+
     if query:
-        albums_list = Album.objects.filter(title__icontains=query)
+    # Construct a Q object with all possible search fields
+        query_filters = Q(artist__icontains=query) | \
+                        Q(title__icontains=query) | \
+                        Q(release_date__icontains=query) | \
+                        Q(format__icontains=query) | \
+                        Q(label__icontains=query) | \
+                        Q(genre__icontains=query)
+
+    # Filter album listings based on constructed queries
+        albums_list = Album.objects.filter(query_filters)
     else:
+    # If there is no query string, all albums are returned
         albums_list = Album.objects.all()
 
     paginator = Paginator(albums_list, 100)
@@ -87,22 +106,49 @@ def userpage(request):
     return render(request, 'element/userpage.html', {'albums': albums})
 
 def add_to_cart(request, album_id):
-    # 这里你可以添加逻辑来实现如何将专辑添加到购物车，例如使用 session
     cart = request.session.get('cart', [])
     if album_id not in cart:
         cart.append(album_id)
         request.session['cart'] = cart
-        messages.success(request, "添加成功")
+        messages.success(request, "Successfully!")
     else:
-        messages.info(request, "此专辑已在购物车中")
-    return redirect('album-list')  # 或者是你展示专辑的页面
+        messages.info(request, "This album is in the shopping cart")
+    return redirect('cart')  
+
+def remove_from_cart(request, album_id):
+    cart = request.session.get('cart', [])
+    
+    # Check if the album ID is in the shopping cart
+    if album_id in cart:
+        # Remove Album ID from Shopping Cart
+        cart.remove(album_id)
+        # Update shopping cart in session
+        request.session['cart'] = cart
+        # Add Success Message
+        messages.success(request, "Album successfully removed from cart.")
+    else:
+        # Add an informative message if the album ID is not in the shopping cart
+        messages.info(request, "Album not found in cart.")
+    # Redirect to shopping cart page
+    return redirect('cart')  # Here 'cart' should be the URL name of the page that displays the shopping cart
 
 def cart(request):
-    cart = request.session.get('cart', [])
-    # 根据 cart 中的 album_id 获取专辑详细信息，这需要从数据库查询
-    albums = Album.objects.filter(id__in=cart)  # 假设你有一个 Album 模型
-    return render(request, 'element/cart.html', {'albums': albums})
+    if request.method == 'POST':
+        album_id = request.POST.get('album_id')  # Get album_id from POST request
+        cart = request.session.get('cart', [])
+        if album_id and album_id in cart:
+            cart.remove(album_id)  # Remove Album ID from Shopping Cart
+            request.session['cart'] = cart  # Update shopping cart in session
+            messages.success(request, "Album successfully removed from cart.")
+        else:
+            messages.error(request, "Album not found in cart.")
+        return redirect('cart')  # Redirection to avoid double submission of POST requests
 
+    # GET Request Logic
+    cart = request.session.get('cart', [])
+    print("Cart content:", cart)
+    albums = Album.objects.filter(id__in=cart) if cart else []
+    return render(request, 'element/cart.html', {'albums': albums})
 def album_detail(request, album_id):
     album = get_object_or_404(Album, pk=album_id)
     reviews = album.reviews.all()
@@ -131,9 +177,8 @@ class AlbumForm(ModelForm):
         model = Album
         fields = ['artist', 'title', 'release_date', 'format', 'label', 'genre']
 
-# 显示专辑列表
 def album_list(request):
-    data = Album.objects.all()[:5000]  # 限制最多5000条数据
+    data = Album.objects.all()[:5000]  # Limit to a maximum of 5000 pieces of data
     table = AlbumTable(data)
     RequestConfig(request, paginate={"per_page": 50}).configure(table)  # 每页50条数据
     return render(request, 'admin/album_list.html', {'table': table})
@@ -149,7 +194,7 @@ def album_add(request):
         form = AlbumForm()
     return render(request, 'admin/album_form.html', {'form': form})
 
-# 编辑专辑
+# Edit Album
 def album_edit(request, pk):
     album = get_object_or_404(Album, pk=pk)
     if request.method == 'POST':
@@ -161,11 +206,28 @@ def album_edit(request, pk):
         form = AlbumForm(instance=album)
     return render(request, 'admin/album_form.html', {'form': form})
 
-# 删除专辑
+# Delete Album
 def album_delete(request, pk):
     album = get_object_or_404(Album, pk=pk)
     if request.method == 'POST':
         album.delete()
         return redirect('album-list')
     return render(request, 'admin/album_confirm_delete.html', {'object': album})
+
+def payment(request):
+    if request.method == 'POST':
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            # The actual payment logic can be integrated here
+            request.session['cart'] = []  # The actual payment logic can be integrated here
+            messages.success(request, "Payment successful and cart cleared.")
+            return redirect('success')  # or redirect to another appropriate page
+    else:
+        form = PaymentForm()
+
+    return render(request, 'element/payment.html', {'form': form})
+
+def success(request):
+    return render(request, 'element/success.html')
+
 

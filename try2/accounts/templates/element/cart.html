@@ -1,33 +1,81 @@
 {% extends 'element/base.html' %}
 
 {% block content %}
-<h2>购物车</h2>
+<h2>Cart</h2>
 
 {% if albums %}
 <table>
     <thead>
         <tr>
-            <th>专辑名称</th>
-            <th>艺术家</th>
-            
-            <th>操作</th>
+            <th>Number</th>
+            <th>Album title</th>
+            <th>Artists</th>
+            <th>Action</th>
         </tr>
     </thead>
     <tbody>
         {% for album in albums %}
         <tr>
-            <td><a href="{% url 'album_detail' album.id %}">{{ album.name }}</a></td>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ album.title }}</a></td>
             <td>{{ album.artist }}</td>
             
             <td>
-                <button onclick="removeFromCart({{ album.id }});">移除</button>
+                <form method="POST" action="{% url 'remove_from_cart' album.id %}">
+                    {% csrf_token %}
+                    <button type="submit" data-album-id="{{ album.id }}">remove</button>
+                </form>
             </td>
         </tr>
         {% endfor %}
     </tbody>
+    <td><a href="{% url 'payment' %}">pay</a></td>
 </table>
 {% else %}
-<p>您的购物车为空。</p>
+<p>Your shopping cart is empty.</p>
 {% endif %}
 
 {% endblock %}
+
+<script>
+document.querySelectorAll('.delete-button').forEach(button => {
+    button.addEventListener('click', function() {
+        var albumId = this.getAttribute('data-album-id');
+        if (confirm('Are you sure you want to delete this album?')) {
+            fetch('/delete-album/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),  // Fetch CSRF token function needed
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'album_id=' + albumId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.reload();  // Reload the page to update the list
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+    });
+});
+
+// Function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>

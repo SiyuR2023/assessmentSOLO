@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.conf import settings
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -20,7 +21,7 @@ def update_user_profile(sender, instance, created, **kwargs):
 class Album(models.Model):
     artist = models.CharField(max_length=100)
     title = models.CharField(max_length=100)
-    release_date = models.DateField()  # 使用 DateField 来存储发布日期
+    release_date = models.DateField()  # Use DateField to store the release date
     format = models.CharField(max_length=50)
     label = models.CharField(max_length=100)
     genre = models.CharField(max_length=50)
@@ -47,6 +48,15 @@ class Aoty(models.Model):
 
     def __str__(self):
         return f"{self.album.title} AOTY Review"
+
+class Cart(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    album = models.ForeignKey(Album, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.album} ({self.quantity})"
 
 class CartItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
