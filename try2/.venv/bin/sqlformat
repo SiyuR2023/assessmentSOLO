@@ -1,4 +1,4 @@
-#!/home/codio/workspace/try2/.venv/bin/python3
+#!/home/codio/workspace/assessmentSOLO/try2/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
